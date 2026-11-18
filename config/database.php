@@ -8,6 +8,25 @@
  * 2. TiDB Cloud (Serverless & Dedicated over TLS/SSL)
  */
 
+// 0. Auto-load local .env file if present
+$envFile = __DIR__ . '/../.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) continue;
+        if (strpos($line, '=') !== false) {
+            list($key, $val) = explode('=', $line, 2);
+            $key = trim($key);
+            $val = trim($val, " \t\n\r\0\x0B\"'");
+            if (getenv($key) === false) {
+                putenv("{$key}={$val}");
+                $_ENV[$key] = $val;
+            }
+        }
+    }
+}
+
 // 1. Connection parameter resolution (Environment variables or default fallbacks)
 $dbUrl = getenv('DATABASE_URL') ?: (getenv('TIDB_DATABASE_URL') ?: null);
 
