@@ -1,16 +1,21 @@
 -- Barangay Health Outreach Management System
 -- Seed Data for Testing & Development
 
+CREATE DATABASE IF NOT EXISTS barangay_health_db;
 USE barangay_health_db;
 
--- Clear existing data and reset IDs safely without foreign key conflicts
+-- Clear existing data safely without foreign key conflicts
 SET FOREIGN_KEY_CHECKS = 0;
+DELETE FROM appointments;
+DELETE FROM inventory;
 DELETE FROM service_records;
 DELETE FROM registrations;
 DELETE FROM programs;
 DELETE FROM residents;
 DELETE FROM users;
 
+ALTER TABLE appointments AUTO_INCREMENT = 1;
+ALTER TABLE inventory AUTO_INCREMENT = 1;
 ALTER TABLE service_records AUTO_INCREMENT = 1;
 ALTER TABLE registrations AUTO_INCREMENT = 1;
 ALTER TABLE programs AUTO_INCREMENT = 1;
@@ -61,3 +66,21 @@ INSERT INTO service_records (registration_id, service_description, service_date)
 (2, 'Blood pressure screening (110/70) and dispensing of pediatric vitamins for dependents.', '2026-11-15 10:15:00'),
 (5, 'Attended maternal & child nutrition counseling workshop and received family dietary supplement kit.', '2026-10-28 10:00:00'),
 (6, 'Senior citizen dietary assessment and random blood sugar test (FBS: 98 mg/dL - Normal).', '2026-10-28 10:45:00');
+
+-- 6. Consultations & Appointments
+INSERT INTO appointments (resident_id, appointment_date, purpose, physician_name, status) VALUES
+(1, '2026-11-22 09:30:00', 'Hypertension Follow-up Checkup', 'Dr. Maria Ramos', 'Scheduled'),
+(2, '2026-11-23 10:15:00', 'Prenatal Second Trimester Assessment', 'Dr. Maria Ramos', 'Scheduled'),
+(3, '2026-11-19 14:00:00', 'Minor Surgical Wound Dressing', 'Dr. Maria Ramos', 'Completed'),
+(5, '2026-11-24 11:00:00', 'Pediatric Vaccination Consultation', 'Dr. Maria Ramos', 'Scheduled');
+
+-- 7. Supplies & Medicine Inventory
+INSERT INTO inventory (item_name, category, stock_quantity, unit, stock_status) VALUES
+('Paracetamol 500mg Tablets', 'Analgesics / Antipyretics', 450, 'tablets', 'Adequate'),
+('Amoxicillin 500mg Capsules', 'Antibiotics', 120, 'capsules', 'Adequate'),
+('Amlodipine 5mg Tablets', 'Cardiovascular', 80, 'tablets', 'Low Stock'),
+('Metformin 500mg Tablets', 'Antidiabetic', 210, 'tablets', 'Adequate'),
+('Oral Rehydration Salts (ORS)', 'Hydration / Pediatric', 25, 'sachets', 'Low Stock'),
+('Sterile Gauze Bandages 4x4', 'Medical Consumables', 60, 'packs', 'Adequate'),
+('Ascorbic Acid (Vitamin C) 500mg', 'Vitamins & Supplements', 300, 'tablets', 'Adequate'),
+('Cotton Balls 500g', 'Medical Consumables', 0, 'packs', 'Out of Stock');

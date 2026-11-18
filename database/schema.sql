@@ -1,5 +1,5 @@
 
-CREATE DATABASE barangay_health_db;
+CREATE DATABASE IF NOT EXISTS barangay_health_db;
 
 USE barangay_health_db;
 
@@ -100,3 +100,11 @@ CREATE TABLE inventory (
     stock_status ENUM('Adequate', 'Low Stock', 'Out of Stock') DEFAULT 'Adequate',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 8. Persistent Sessions (Required for Serverless / Vercel & TiDB)
+CREATE TABLE IF NOT EXISTS sessions (
+    id VARCHAR(128) NOT NULL PRIMARY KEY,
+    data MEDIUMTEXT NOT NULL,
+    last_activity INT UNSIGNED NOT NULL,
+    KEY idx_last_activity (last_activity)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

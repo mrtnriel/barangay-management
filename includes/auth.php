@@ -2,9 +2,89 @@
 /**
  * Authentication and Session Management Helper
  * Barangay Health Outreach Management System
+ * 
+ * Supports persistent database-backed sessions across stateless serverless
+ * environments (Vercel) connected to TiDB Cloud or MySQL.
  */
 
+if (!isset($pdo)) {
+    require_once __DIR__ . '/../config/database.php';
+}
+
 if (session_status() === PHP_SESSION_NONE) {
+    // Configure secure session cookies
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+    if (!headers_sent()) {
+        session_set_cookie_params([
+            'lifetime' => 86400 * 7, // 7 days retention
+            'path'     => '/',
+            'secure'   => $isHttps,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    // Attach DB session handler if PDO is connected
+    if (isset($pdo) && $pdo instanceof PDO) {
+        try {
+            // Ensure sessions table exists in TiDB / MySQL
+            $pdo->exec("CREATE TABLE IF NOT EXISTS sessions (
+                id VARCHAR(128) NOT NULL PRIMARY KEY,
+                data MEDIUMTEXT NOT NULL,
+                last_activity INT UNSIGNED NOT NULL,
+                KEY idx_last_activity (last_activity)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $handler = new class($pdo) implements SessionHandlerInterface {
+                private PDO $db;
+                public function __construct(PDO $db) { $this->db = $db; }
+                public function open(string $path, string $name): bool { return true; }
+                public function close(): bool { return true; }
+                public function read(string $id): string|false {
+                    try {
+                        $stmt = $this->db->prepare("SELECT data FROM sessions WHERE id = :id LIMIT 1");
+                        $stmt->execute([':id' => $id]);
+                        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                        return $row ? (string)$row['data'] : '';
+                    } catch (Throwable $e) {
+                        return '';
+                    }
+                }
+                public function write(string $id, string $data): bool {
+                    try {
+                        $stmt = $this->db->prepare("REPLACE INTO sessions (id, data, last_activity) VALUES (:id, :data, :act)");
+                        return $stmt->execute([':id' => $id, ':data' => $data, ':act' => time()]);
+                    } catch (Throwable $e) {
+                        return false;
+                    }
+                }
+                public function destroy(string $id): bool {
+                    try {
+                        $stmt = $this->db->prepare("DELETE FROM sessions WHERE id = :id");
+                        return $stmt->execute([':id' => $id]);
+                    } catch (Throwable $e) {
+                        return false;
+                    }
+                }
+                public function gc(int $max_lifetime): int|false {
+                    try {
+                        $cutoff = time() - $max_lifetime;
+                        $stmt = $this->db->prepare("DELETE FROM sessions WHERE last_activity < :cutoff");
+                        $stmt->execute([':cutoff' => $cutoff]);
+                        return $stmt->rowCount();
+                    } catch (Throwable $e) {
+                        return false;
+                    }
+                }
+            };
+            session_set_save_handler($handler, true);
+        } catch (Throwable $e) {
+            error_log("Session DB handler error: " . $e->getMessage());
+        }
+    }
+
     session_start();
 }
 

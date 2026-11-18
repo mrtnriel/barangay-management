@@ -113,6 +113,59 @@ The database comes pre-seeded with 3 authorized accounts with different permissi
 
 ---
 
+## ☁️ Deploying to Vercel with TiDB Cloud
+
+This application is ready for serverless deployment on **Vercel** backed by a **TiDB Cloud Serverless** MySQL-compatible distributed database.
+
+### Step 1: Set Up TiDB Cloud (Free Serverless Cluster)
+1. Sign up or log in at **[tidbcloud.com](https://tidbcloud.com)**.
+2. Click **Create Cluster** and select **TiDB Serverless** (Free forever tier).
+3. In your cluster dashboard, click the **Connect** button at the top right.
+4. Set the connection type to **General** or **PHP (PDO)**.
+5. Note your connection details:
+   - **Host**: e.g., `gateway01.ap-southeast-1.prod.aws.tidbcloud.com`
+   - **Port**: `4000`
+   - **User**: e.g., `xxxxxxxx.root`
+   - **Password**: Your cluster password
+   - **Database**: `barangay_health_db` (or `test`)
+6. Open the **SQL Editor** tab in TiDB Cloud:
+   - Open and run [`database/schema.sql`](file:///C:/xampp/htdocs/barangay-health-system/database/schema.sql) to create the tables.
+   - Open and run [`database/seed.sql`](file:///C:/xampp/htdocs/barangay-health-system/database/seed.sql) to populate initial users, residents, programs, and medicines.
+7. Under **Security** / **IP Access List**, ensure `0.0.0.0/0` (Allow traffic from anywhere) is configured so Vercel serverless functions can connect.
+
+---
+
+### Step 2: Deploy on Vercel
+1. Push your repository to **GitHub**:
+   ```bash
+   git add .
+   git commit -m "Configure Vercel and TiDB Cloud deployment"
+   git push origin main
+   ```
+2. Go to **[vercel.com](https://vercel.com)** and click **Add New...** → **Project**.
+3. Import your GitHub repository `barangay-health-outreach-program-management`.
+4. In the **Environment Variables** section, add:
+   - `DB_HOST`: Your TiDB Host (e.g. `gateway01...tidbcloud.com`)
+   - `DB_PORT`: `4000`
+   - `DB_NAME`: `barangay_health_db`
+   - `DB_USER`: Your TiDB User (e.g. `xxxxxxxx.root`)
+   - `DB_PASSWORD`: Your TiDB Password
+5. Click **Deploy**. Vercel will build and deploy the serverless PHP functions using the pre-configured [`vercel.json`](file:///C:/xampp/htdocs/barangay-health-system/vercel.json).
+
+---
+
+### Step 3: Verify Your Cloud Deployment
+After deployment succeeds, test your database connectivity by visiting:
+```text
+https://your-project.vercel.app/test-db
+```
+Or check the live portal at:
+```text
+https://your-project.vercel.app/
+```
+
+---
+
 ## 📂 Project Directory Structure
 
 ```text
